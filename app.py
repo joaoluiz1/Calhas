@@ -30,13 +30,22 @@ with tab1:
         st.markdown("---")
         st.markdown("**Geometria e Características da Calha (Seção Retangular)**")
         b_calha = st.number_input("Largura da base da calha (b) [m]:", min_value=0.01, value=0.25, step=0.05, format="%.3f")
-        h_molhada = st.number_input("Altura da lâmina de água / molhada (h) [m]:", min_value=0.01, value=0.166, step=0.01, format="%.3f")
+        h_total_calha = st.number_input("Altura total da calha ($H_{total}$) [m]:", min_value=0.01, value=0.25, step=0.05, format="%.3f")
+        
+        prop_selecionada = st.selectbox("Proporção para a altura molhada:", ["50%", "66%", "75%"])
+        
+        # Mapeamento da proporção escolhida
+        mapa_proporcoes = {"50%": 0.50, "66%": 0.66, "75%": 0.75}
+        fator_prop = mapa_proporcoes[prop_selecionada]
+        h_molhada = h_total_calha * fator_prop
+        
         n_rug = st.number_input("Coeficiente de rugosidade de Manning (n):", min_value=0.001, value=0.011, step=0.001, format="%.3f", help="Ex: Plástico/Metal = 0.011")
         declividade = st.number_input("Declividade da calha (i) [m/m]:", min_value=0.0001, value=0.0050, step=0.0005, format="%.4f", help="Mínimo de 0,5% (0.0050 m/m) conforme item 5.5.2")
 
     with col_out:
         st.subheader("Memorial de Cálculo Detalhado")
         
+        # 1. Cálculo da Vazão de Projeto
         st.markdown("#### 1. Vazão de Projeto ($Q_{proj}$)")
         st.markdown("> \"A vazão de projeto deve ser calculada pela fórmula: $Q = \\frac{I \\cdot A}{60}$\" — **Página 3, Item 5.3.1**")
         
@@ -52,6 +61,7 @@ with tab1:
         
         st.markdown("---")
         
+        # 2. Cálculo da Calha (Manning-Strickler)
         st.markdown("#### 2. Capacidade da Calha ($Q_{calha}$)")
         st.markdown("> \"O dimensionamento das calhas deve ser feito através da fórmula de Manning-Strickler... $Q = K \\cdot S \\cdot R^{2/3} \\cdot i^{1/2}$\" — **Página 5, Item 5.5.7**")
         
@@ -64,7 +74,9 @@ with tab1:
         
         st.markdown("**Símbolos e Valores:**")
         st.markdown(f"- $b = {b_calha:.3f}$ m (Largura da base)")
-        st.markdown(f"- $h = {h_molhada:.3f}$ m (Altura da lâmina)")
+        st.markdown(f"- $H_{{total}} = {h_total_calha:.3f}$ m (Altura total da calha)")
+        st.markdown(f"- $\\text{{Proporção}} = {prop_selecionada}$")
+        st.markdown(f"- $h = H_{{total}} \\cdot \\text{{Proporção}} = {h_total_calha:.3f} \\cdot {fator_prop:.2f} = {h_molhada:.3f}$ m (Altura da lâmina d'água)")
         st.markdown(f"- $n = {n_rug:.3f}$ (Coeficiente de rugosidade)")
         st.markdown(f"- $i = {declividade:.4f}$ m/m (Declividade)")
         st.markdown(f"- $S = b \\cdot h = {b_calha:.3f} \\cdot {h_molhada:.3f} = {S_area:.4f}$ m² (Área molhada)")
@@ -79,6 +91,7 @@ with tab1:
         
         st.markdown("---")
         
+        # 3. Comparação de Resultados com Alinhamento Estrito
         st.markdown("#### Verificação de Conformidade")
         
         res_col1, res_col2 = st.columns(2)
@@ -91,7 +104,6 @@ with tab1:
             st.success("✅ **CONFORMIDADE ATENDIDA:** A capacidade da calha é maior ou igual à vazão de projeto.")
         else:
             st.error("❌ **NÃO ATENDE:** A capacidade da calha é insuficiente para a vazão de projeto calculada. Aumente as dimensões ou a declividade.")
-
 # ==============================================================================
 # ABA 2: CONDUTORES VERTICAIS
 # ==============================================================================
