@@ -12,13 +12,21 @@ from docx.shared import Pt, RGBColor
 st.set_page_config(page_title="Dimensionamento Pluvial - NBR 10844", layout="wide")
 
 # ==============================================================================
-# BARRA LATERAL - RESPONSÁVEL TÉCNICO
+# OTIMIZAÇÃO DE PERFORMANCE (CACHE PARA IMAGENS)
 # ==============================================================================
-st.sidebar.title("👨‍💻 Responsável Técnico")
+@st.cache_data
+def carregar_imagem(caminho):
+    return Image.open(caminho)
+
+# ==============================================================================
+# BARRA LATERAL - AUTOR E AVISO LEGAL
+# ==============================================================================
+st.sidebar.title("👨‍💻 Desenvolvido por")
 st.sidebar.markdown("### **João Luiz**")
 st.sidebar.markdown("📧 joaoluiz@outlook.com")
 st.sidebar.markdown("---")
-st.sidebar.info("Memorial de Cálculo Automático conforme exigências da NBR 10844/1989.")
+st.sidebar.warning("⚠️ **Aviso Legal:** Este software é uma ferramenta auxiliar de cálculo. O usuário é o único e exclusivo responsável pela conferência dos resultados e pela aplicação técnica destes dimensionamentos em seus projetos.")
+st.sidebar.info("Memorial de Cálculo Automático estruturado conforme os parâmetros da NBR 10844/1989.")
 
 st.title("Dimensionamento de Instalações Prediais de Águas Pluviais")
 st.markdown("**Norma de Referência:** NBR 10844/1989")
@@ -42,12 +50,17 @@ def formatar_formula_word(doc, rotulo, formula):
 def criar_cabecalho_word(doc, titulo):
     doc.add_heading(titulo, 0)
     p = doc.add_paragraph()
-    p.add_run("Responsável Técnico: ").bold = True
+    p.add_run("Desenvolvido por: ").bold = True
     p.add_run("João Luiz\n")
     p.add_run("E-mail: ").bold = True
     p.add_run("joaoluiz@outlook.com\n")
     p.add_run("Norma: ").bold = True
     p.add_run("NBR 10844/1989\n")
+    doc.add_paragraph("--------------------------------------------------")
+    
+    p_aviso = doc.add_paragraph()
+    p_aviso.add_run("AVISO: O usuário é o responsável técnico por conferir, validar e assumir a autoria dos cálculos aplicados através deste memorial.").italic = True
+    
     doc.add_paragraph("--------------------------------------------------")
 
 # ==============================================================================
@@ -162,7 +175,7 @@ with tab1:
         st.download_button(
             label="📄 Baixar Memorial em Word (.docx)", 
             data=bio_calha.getvalue(), 
-            file_name="Memorial_Calhas_JoaoLuiz.docx", 
+            file_name="Memorial_Calhas.docx", 
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
@@ -209,24 +222,32 @@ with tab2:
             st.markdown("**Figura 3 (b) - Saída com Funil**")
             arquivo_img = "Abaco calha com funil da saida.png"
             
-        grafico_placeholder = st.empty()
-        
-        st.markdown("#### 🎛️ Controles Livres de Alinhamento")
-        pos_x = st.slider("Ajustar Linha Vertical (Esquerda ↔ Direita)", min_value=0.0, max_value=100.0, value=25.0, step=0.1)
-        pos_y = st.slider("Ajustar Linha Horizontal (Baixo ↕ Cima)", min_value=0.0, max_value=100.0, value=40.0, step=0.1)
+        st.info("🖱️ **Dica de Uso:** Clique e **arraste as linhas vermelha e azul** com o mouse diretamente sobre o gráfico para fazer sua leitura de forma dinâmica!")
         
         fig = go.Figure()
         if os.path.exists(arquivo_img):
-            img = Image.open(arquivo_img)
+            img = carregar_imagem(arquivo_img)
             fig.add_layout_image(
                 dict(source=img, xref="x", yref="y", x=0, y=100, sizex=100, sizey=100, sizing="stretch", opacity=1, layer="below")
             )
+        else:
+            st.warning(f"⚠️ Imagem '{arquivo_img}' não encontrada no diretório do projeto. O gráfico aparecerá sem fundo.")
+            
         fig.update_xaxes(range=[0, 100], showgrid=False, zeroline=False, visible=False)
         fig.update_yaxes(range=[0, 100], showgrid=False, zeroline=False, visible=False)
-        fig.add_shape(type="line", x0=pos_x, y0=0, x1=pos_x, y1=100, line=dict(color="red", width=2, dash="dash"))
-        fig.add_shape(type="line", x0=0, y0=pos_y, x1=100, y1=pos_y, line=dict(color="blue", width=2))
+        
+        # LINHAS ARRASTÁVEIS: 'editable=True' ativado para interação via JavaScript
+        fig.add_shape(type="line", x0=25, y0=0, x1=25, y1=100, 
+                      line=dict(color="red", width=2, dash="dash"), editable=True)
+                      
+        fig.add_shape(type="line", x0=0, y0=40, x1=100, y1=40, 
+                      line=dict(color="blue", width=2), editable=True)
+                      
         fig.update_layout(height=650, margin=dict(l=0, r=0, t=10, b=0), template="plotly_white")
-        grafico_placeholder.plotly_chart(fig, use_container_width=True)
+        
+        # Configuração para permitir a edição de formas no Plotly
+        config_interativa = {'edits': {'shapePosition': True}}
+        st.plotly_chart(fig, use_container_width=True, config=config_interativa)
 
         st.markdown(f"**Resultado Verificado no Ábaco:** Diâmetro Adotado = **{diametro_escolhido}**")
 
@@ -249,7 +270,7 @@ with tab2:
         st.download_button(
             label="📄 Baixar Memorial em Word (.docx)", 
             data=bio_vert.getvalue(), 
-            file_name="Memorial_Verticais_JoaoLuiz.docx", 
+            file_name="Memorial_Verticais.docx", 
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
@@ -357,6 +378,6 @@ with tab3:
         st.download_button(
             label="📄 Baixar Memorial em Word (.docx)", 
             data=bio_horiz.getvalue(), 
-            file_name="Memorial_Horizontais_JoaoLuiz.docx", 
+            file_name="Memorial_Horizontais.docx", 
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
