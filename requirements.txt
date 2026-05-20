@@ -1,7 +1,6 @@
 streamlit
 pandas
-PIL
 plotly
-os
-math
-plotly.graph
+numpy
+Pillow
+python-docx
