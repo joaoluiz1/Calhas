@@ -1,2 +1,7 @@
 streamlit
 pandas
+PIL
+plotly
+os
+math
+plotly.graph
